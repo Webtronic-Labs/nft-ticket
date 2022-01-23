@@ -1,1 +1,74 @@
-/* You can add global styles to this file, and also import other style files */
+*,
+*::before,
+*::after {
+  // Good practice to add box-sizing: border-box in body and inherit here
+  box-sizing: inherit;
+  margin: 0;
+  outline: 0;
+  padding: 0;
+}
+
+// Root font size for REM units (responsive design)
+// Browser default font size is 16px, we use 62.5% of it that is equal to 10px. So 1 rem = 10px for easier calculations
+
+html {
+  font-size: 62.5%;
+  height: 100%;
+  width: 100%;
+  font-family: "Roboto Mono", monospace;
+}
+
+body {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 100vh;
+  width: 100%;
+  font-size: 2rem;
+}
+
+input,
+label,
+button,
+a,
+p,
+i {
+  margin: 0;
+  outline: none;
+
+  &:focus {
+    outline: none;
+  }
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+a,
+a > * {
+  cursor: pointer;
+  outline: none;
+  text-decoration: none;
+
+  &:focus,
+  &:hover {
+    outline: none;
+    text-decoration: none;
+  }
+}
+
+ul,
+li {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+strong {
+  padding: 0;
+}
