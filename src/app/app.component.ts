@@ -1,179 +1,131 @@
-import { Component, OnInit } from '@angular/core';
-import { from, switchMap } from 'rxjs';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { from, Subject, switchMap, take, takeUntil } from 'rxjs';
 import { Web3Service } from './web3.service';
-import lotteryABI from '../crypto/compiled/lottery.abi';
-import lotteryBytecode from '../crypto/compiled/lottery.bytecode';
+import { select, Store } from '@ngrx/store';
+import {
+  selectCurrentAddress,
+  selectIsOwner,
+  selectUserHasValidNft,
+} from './store-root/selectors/root.selectors';
+import { SetAddress, SetUserNft } from './store-root/actions/root.actions';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   public lotteries = ['0x6f0AD880a15EDcA81356f1F572A810dE8a59fF8f'];
   public lotteryPlayers = {};
-  public currentAddress = null;
+  public currentAddress = '';
+  public userNfts: number[] = [];
+  public mintedNfts: number[] = [];
+  public userHasValidNft = false;
+  public isUserTheOwner = false;
 
   public successMessage: string = null;
   public errorMessage: boolean = false;
 
-  constructor(private web3Service: Web3Service) {}
+  private destroy$ = new Subject<void>();
+
+  constructor(private web3Service: Web3Service, private store: Store) {}
 
   public ngOnInit(): void {
-    this.getPlayers();
-    this.getManagers();
-    from(this.web3Service.web3Instance.eth.getAccounts()).subscribe(
-      (accounts: string[]) => {
-        this.currentAddress = accounts[0];
-      }
-    );
+    this.addressSub();
+    this.loadAccount();
+    this.getUserNfts();
+    this.hasUserValidTicketSub();
+    this.isUserTheOwnerSub();
+    this.checkTheUserOwner();
   }
 
-  public getCanEnter(lotteryAddress: string): boolean {
-    return (
-      !this.lotteryPlayers[lotteryAddress]?.players?.includes(
-        this.currentAddress
-      ) ?? true
-    );
-  }
-
-  public createLottery() {
-    let currentAddress: string = null;
-    this.successMessage = 'Started transaction';
-    from(this.web3Service.web3Instance.eth.getAccounts())
+  public connectToWallet(): void {
+    from(this.web3Service.connectToMetamask())
       .pipe(
-        switchMap((accounts: string[]) => {
-          currentAddress = accounts[0];
-          const lotteryContract =
-            new this.web3Service.web3Instance.eth.Contract(
-              JSON.parse(JSON.stringify(lotteryABI))
-            );
-
-          return from(
-            lotteryContract
-              .deploy({ data: lotteryBytecode.object })
-              .send({ from: currentAddress + '' })
-          );
-        })
+        switchMap(() => this.web3Service.web3Instance.eth.getAccounts()),
+        take(1)
       )
       .subscribe({
-        next: (address: any) => {
-          this.successMessage =
-            'Deployed lottery successful at ' + address.address;
-          console.log(address.address);
-        },
-        error: (error) => {
-          this.errorMessage = true;
-          this.successMessage = null;
-          console.error(error);
+        next: (accounts: string[]) => {
+          this.currentAddress = accounts[0];
+          console.log(accounts);
         },
       });
   }
 
-  public getPlayers(lotteryAddress?: string) {
-    let addresses: string[] = [];
-
-    if (lotteryAddress) {
-      addresses = [lotteryAddress];
-    } else {
-      addresses = this.lotteries;
-    }
-    console.log(this.web3Service.web3Instance);
-
-    for (let address of addresses) {
-      const lotteryContract = new this.web3Service.web3Instance.eth.Contract(
-        JSON.parse(JSON.stringify(lotteryABI)),
-        address
-      );
-
-      from(lotteryContract.methods.getPlayers().call()).subscribe({
-        next: (players: any) => {
-          if (!this.lotteryPlayers[address]) {
-            this.lotteryPlayers[address] = { players: players };
-          }
-
-          this.lotteryPlayers[address].players = players;
-        },
-      });
-    }
+  public ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  public participateInLottery(address: string) {
-    let currentAddress: string = null;
+  private loadAccount(): void {
+    from(this.web3Service.web3Instance.eth.getAccounts()).subscribe({
+      next: (accounts: string[]) => {
+        if (accounts.length) {
+          this.currentAddress = accounts[0];
+          this.store.dispatch(SetAddress({ address: accounts[0] }));
+        }
 
-    from(this.web3Service.web3Instance.eth.getAccounts())
-      .pipe(
-        switchMap((accounts: string[]) => {
-          currentAddress = accounts[0];
-          const lotteryContract =
-            new this.web3Service.web3Instance.eth.Contract(
-              JSON.parse(JSON.stringify(lotteryABI)),
-              address
-            );
-
-          return from(
-            lotteryContract.methods.enter().send({
-              from: currentAddress,
-              value: this.web3Service.web3Instance.utils.toWei('0.1', 'ether'),
-            })
-          );
-        })
-      )
-      .subscribe({
-        next: (response: any) => {
-          console.log(address);
-          this.lotteryPlayers[response].players = [
-            ...(this.lotteryPlayers[response].players ?? []),
-            this.currentAddress,
-          ];
-          this.getPlayers(response);
-        },
-        error: (error) => {
-          this.errorMessage = true;
-          this.successMessage = null;
-          console.error(error);
-        },
-      });
-  }
-
-  public pickWinner(lotteryAddress: string) {
-    const lotteryContract = new this.web3Service.web3Instance.eth.Contract(
-      JSON.parse(JSON.stringify(lotteryABI)),
-      lotteryAddress
-    );
-    this.successMessage = 'Started transaction';
-
-    from(
-      lotteryContract.methods.pickWinner().send({ from: this.currentAddress })
-    ).subscribe({
-      next: () => {
-        this.successMessage = 'Winner picked!';
-        this.lotteryPlayers[lotteryAddress].players = [];
-      },
-      error: () => {
-        this.successMessage = '';
-        this.errorMessage = true;
+        this.getUserNfts();
       },
     });
   }
 
-  private getManagers() {
-    for (let address of this.lotteries) {
-      const lotteryContract = new this.web3Service.web3Instance.eth.Contract(
-        JSON.parse(JSON.stringify(lotteryABI)),
-        address
-      );
+  private getUserNfts(): void {
+    if (!this.currentAddress.length) {
+      return;
+    }
 
-      from(lotteryContract.methods.manager().call()).subscribe({
-        next: (manager: any) => {
-          if (!this.lotteryPlayers[address]) {
-            this.lotteryPlayers[address] = { manager: manager };
-
+    from(
+      this.web3Service.tokenContract.methods
+        .getUserTickets(this.currentAddress)
+        .call()
+    )
+      .pipe(take(1))
+      .subscribe({
+        next: (userNfts) => {
+          if (!(userNfts as string[]).length) {
             return;
           }
 
-          this.lotteryPlayers[address].manager = manager;
+          userNfts = (userNfts as string[]).map((nftIndex: string) =>
+            parseInt(nftIndex)
+          );
+
+          this.store.dispatch(SetUserNft({ nftIds: userNfts as number[] }));
+          this.web3Service.checkUserHasValidTicket().subscribe();
         },
       });
-    }
+  }
+
+  private hasUserValidTicketSub(): void {
+    this.store
+      .pipe(select(selectUserHasValidNft), takeUntil(this.destroy$))
+      .subscribe({
+        next: (hasValidNft: boolean) => {
+          this.userHasValidNft = hasValidNft;
+        },
+      });
+  }
+
+  private isUserTheOwnerSub(): void {
+    this.store.pipe(select(selectIsOwner), takeUntil(this.destroy$)).subscribe({
+      next: (isOwner: boolean) => {
+        this.isUserTheOwner = isOwner;
+      },
+    });
+  }
+
+  private checkTheUserOwner(): void {
+    this.web3Service.checkIsTheUserTheOwner().subscribe();
+  }
+
+  private addressSub(): void {
+    this.store
+      .pipe(select(selectCurrentAddress), takeUntil(this.destroy$))
+      .subscribe({
+        next: (address: string) => {
+          this.currentAddress = address;
+        },
+      });
   }
 }

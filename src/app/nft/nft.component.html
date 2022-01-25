@@ -1,0 +1,26 @@
+<div class="nft" fxLayout="column" fxLayoutAlign="space-between center">
+  <div class="nftId" fxLayoutAlign="center center">
+    {{ id }}
+  </div>
+
+  <app-spinner
+    *ngIf="isLoading; else actionBlock"
+    class="spinner"
+  ></app-spinner>
+
+  <ng-template #actionBlock>
+    <button
+      class="create-lottery-button"
+      style="width: 100%"
+      *ngIf="!isOwnedByUser && !isOwned"
+      (click)="buyToken.emit()"
+    >
+      Buy Ticket
+    </button>
+
+    <div class="yours" *ngIf="isOwnedByUser">This Ticket is yours!</div>
+    <div class="yours" *ngIf="isOwned && !isOwnedByUser">
+      This ticket is already sold
+    </div>
+  </ng-template>
+</div>

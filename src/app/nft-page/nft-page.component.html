@@ -1,0 +1,23 @@
+<div fxLayout="column" fxLayoutAlign="center start">
+  <div fxLayout="row wrap" fxLayoutGap="2rem">
+    <app-nft
+      *ngFor="let mintedNft of mintedNfts"
+      [id]="mintedNft"
+      [isOwnedByUser]="getIsOwnedByUser(mintedNft)"
+      (buyToken)="buyToken()"
+    ></app-nft>
+  </div>
+
+  <div
+    class="over-layer"
+    *ngIf="isLoading"
+    fxLayout="row"
+    fxLayoutAlign="center center"
+  >
+    <div class="loader"></div>
+  </div>
+
+  <div *ngIf="userPurchasedTicket">
+    <h1>you have purchased a ticket!</h1>
+  </div>
+</div>

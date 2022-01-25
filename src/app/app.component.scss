@@ -16,7 +16,6 @@
 }
 
 .lottery-instance {
-  width: 50rem;
   padding: 1rem;
   background-color: #81b29a;
   border-radius: 0.5rem;
@@ -25,6 +24,10 @@
 
   span {
     text-decoration: dashed;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
   }
 }
 

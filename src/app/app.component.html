@@ -1,51 +1,35 @@
-<div
-  class="lottey-wrapper"
-  fxLayout="column"
-  fxLayoutAlign="start center"
-  fxLayoutGap="2rem"
->
-  <button type="button" class="create-lottery-button" (click)="createLottery()">
-    Create Lottery
-  </button>
-
-  <div class="success-message" *ngIf="successMessage">
-    {{ successMessage }}
-  </div>
-  <div class="error-message" *ngIf="errorMessage">
-    There was an error with your transfer
-  </div>
-
-  <div
-    class="lottery-instance"
-    *ngFor="let lottery of lotteries"
-    fxLayout="column"
-    fxLayoutGap="1rem"
-  >
-    <span>{{ lottery }}</span>
-    <div *ngFor="let player of lotteryPlayers[lottery]?.players" class="player">
-      {{ player }}
-    </div>
-
-    <div *ngIf="!lotteryPlayers[lottery]?.players?.length" class="player">
-      there are no players in this lottery
+<div class="lottey-wrapper" fxLayout="column" fxLayoutGap="3rem">
+  <div style="width: 100%" fxLayout="row" fxLayoutAlign="space-between center">
+    <div fxLayout="row" fxLayoutGap="0.5rem">
+      <button
+        class="create-lottery-button"
+        [routerLink]="['/secret']"
+        *ngIf="userHasValidNft"
+      >
+        Enter secret website
+      </button>
+      <button
+        class="create-lottery-button"
+        [routerLink]="['/control-panel']"
+        *ngIf="isUserTheOwner"
+      >
+        Control Panel
+      </button>
+      <button class="create-lottery-button" [routerLink]="['/nft']">NFT</button>
     </div>
 
     <button
-      *ngIf="getCanEnter(lottery)"
-      (click)="participateInLottery(lottery)"
       class="create-lottery-button"
+      (click)="connectToWallet()"
+      *ngIf="!currentAddress?.length; else welcomeBlock"
     >
-      Enter
+      Connect to Wallet!
     </button>
-    <button
-      *ngIf="
-        lotteryPlayers[lottery]?.manager === currentAddress &&
-        currentAddress?.length
-      "
-      class="create-lottery-button"
-      (click)="pickWinner(lottery)"
-    >
-      PickWinner
-    </button>
+
+    <ng-template #welcomeBlock>
+      <div class="lottery-instance">Welcome {{ currentAddress }}!</div>
+    </ng-template>
   </div>
+
+  <router-outlet></router-outlet>
 </div>
