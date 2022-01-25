@@ -44,6 +44,7 @@ export class NftPageComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (ticketId) => {
           this.isLoading = false;
+          this.userPurchasedTicket = true;
           console.log(ticketId);
         },
         error: (err) => {
