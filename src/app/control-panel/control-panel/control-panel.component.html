@@ -1,0 +1,83 @@
+<div
+  style="width: 100%"
+  fxLayout="column"
+  fxLayoutAlign="center center"
+  fxLayoutGap="2rem"
+>
+  <h2>Control Panel</h2>
+
+  <form
+    style="width: 100%"
+    [formGroup]="sendTicketForm"
+    (ngSubmit)="sendTicket()"
+  >
+    <div fxLayout="row" fxLayoutGap="2rem">
+      <span style="margin-right: 2rem">Send Ticket</span>
+      <input type="text" class="send-ticket" formControlName="address" />
+    </div>
+    <button class="create-lottery-button" type="submit">Send</button>
+  </form>
+
+  <div *ngIf="ticketWasSent">
+    <h2>Ticked sent correctly</h2>
+  </div>
+
+  <div *ngIf="ticketWasWrong">
+    <h2 style="color: red">
+      There was an error when trying to send the ticket
+    </h2>
+  </div>
+
+  <form
+    style="width: 100%"
+    [formGroup]="approveTicketForm"
+    (ngSubmit)="approveTicket()"
+  >
+    <div fxLayout="row" fxLayoutGap="2rem">
+      <span style="margin-right: 2rem">Approve Ticket</span>
+      <input type="text" class="send-ticket" formControlName="tokenId" />
+    </div>
+    <button class="create-lottery-button" type="submit">Approve</button>
+  </form>
+
+  <div *ngIf="ticketWasApproved">
+    <h2>Ticked approved correctly</h2>
+  </div>
+
+  <div *ngIf="ticketWasApprovedWrong">
+    <h2 style="color: red">
+      There was an error when trying to approve the ticket
+    </h2>
+  </div>
+
+  <form
+    style="width: 100%"
+    [formGroup]="approveTicketForm"
+    (ngSubmit)="approveTicket()"
+  >
+    <div fxLayout="row" fxLayoutGap="2rem">
+      <span style="margin-right: 2rem">Reject Ticket</span>
+      <input type="text" class="send-ticket" formControlName="tokenId" />
+    </div>
+    <button class="create-lottery-button" type="submit">Reject</button>
+  </form>
+
+  <div *ngIf="ticketWasRejected">
+    <h2>Ticked rejected correctly</h2>
+  </div>
+
+  <div *ngIf="ticketWasRejectedWrong">
+    <h2 style="color: red">
+      There was an error when trying to reject the ticket
+    </h2>
+  </div>
+</div>
+
+<div
+  class="over-layer"
+  *ngIf="isLoading"
+  fxLayout="row"
+  fxLayoutAlign="center center"
+>
+  <div class="loader"></div>
+</div>
