@@ -103,7 +103,7 @@ export class ControlPanelComponent implements OnInit {
   public rejectTicket(): void {
     const tokenId = this.rejectTicketForm.get('tokenId').value;
 
-    if (!tokenId) {
+    if (!tokenId.length) {
       return;
     }
 
